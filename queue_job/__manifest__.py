@@ -2,7 +2,7 @@
 
 {
     "name": "Job Queue",
-    "version": "17.0.1.0.3",
+    "version": "1.0.3",
     "author": "Camptocamp,ACSONE SA/NV,Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/queue",
     "license": "LGPL-3",
@@ -22,11 +22,11 @@
         "data/queue_data.xml",
         "data/queue_job_function_data.xml",
     ],
-    "assets": {
-        "web.assets_backend": [
-            "/queue_job/static/src/views/**/*",
-        ],
-    },
+    # "assets": {
+    #     "web.assets_backend": [
+    #         "/queue_job/static/src/views/**/*",
+    #     ],
+    # },
     "installable": True,
     "development_status": "Mature",
     "maintainers": ["guewen"],
