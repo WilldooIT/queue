@@ -145,10 +145,10 @@
     </record>
 
     <record id="view_queue_job_tree" model="ir.ui.view">
-        <field name="name">queue.job.tree</field>
+        <field name="name">queue.job.list</field>
         <field name="model">queue.job</field>
         <field name="arch" type="xml">
-            <tree
+            <list
                 create="false"
                 delete="false"
                 decoration-danger="state == 'failed'"
@@ -171,7 +171,7 @@
                 <field name="uuid" />
                 <field name="channel" />
                 <field name="company_id" groups="base.group_multi_company" />
-            </tree>
+            </list>
         </field>
     </record>
 
