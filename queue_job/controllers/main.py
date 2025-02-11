@@ -11,8 +11,9 @@ from io import StringIO
 from psycopg2 import OperationalError, errorcodes
 from werkzeug.exceptions import BadRequest, Forbidden
 
-from odoo import SUPERUSER_ID, _, api, http, registry, tools
+from odoo import SUPERUSER_ID, _, api, http, tools
 from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
+from odoo.modules.registry import Registry
 
 from ..delay import chain, group
 from ..exception import FailedJobError, NothingToDoJob, RetryableJobError
@@ -76,7 +77,7 @@ class RunJobController(http.Controller):
 
         def retry_postpone(job, message, seconds=None):
             job.env.clear()
-            with registry(job.env.cr.dbname).cursor() as new_cr:
+            with Registry(job.env.cr.dbname).cursor() as new_cr:
                 job.env = api.Environment(new_cr, SUPERUSER_ID, {})
                 job.postpone(result=message, seconds=seconds)
                 job.set_pending(reset_retry=False)
