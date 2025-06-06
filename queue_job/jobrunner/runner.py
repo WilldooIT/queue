@@ -127,6 +127,7 @@ import datetime
 import logging
 import os
 import selectors
+import signal
 import threading
 import time
 from contextlib import closing, contextmanager
@@ -246,9 +247,22 @@ def _async_http_get(scheme, host, port, user, password, db_name, job_uuid):
             set_job_pending()
             _logger.exception("exception in GET %s", url)
 
-    thread = threading.Thread(target=urlopen)
-    thread.daemon = True
-    thread.start()
+    try:
+        thread = threading.Thread(target=urlopen)
+        thread.daemon = True
+        thread.start()
+    except RuntimeError as e:
+        set_job_pending()
+        # kill the python process so the worker can be restarted
+        pid = threading.current_thread().native_id
+        _logger.exception(
+            "Recycling worker %(pid )s due to unrecoverable error while creating thread: %(exc)s",
+            {
+                "exc": e,
+                "pid": pid,
+            }
+        )
+        os.kill(threading.current_thread().native_id, signal.SIGHUP)
 
 
 class Database:
