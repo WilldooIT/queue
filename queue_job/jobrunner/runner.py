@@ -139,7 +139,7 @@ import odoo
 from odoo.tools import config
 
 from . import queue_job_config
-from .channels import ENQUEUED, NOT_DONE, ChannelManager
+from .channels import ENQUEUED, NOT_DONE, PENDING, ChannelManager
 
 SELECT_TIMEOUT = 60
 ERROR_RECOVERY_DELAY = 5
@@ -196,6 +196,28 @@ def _connection_info_for(db_name):
 
 
 def _async_http_get(scheme, host, port, user, password, db_name, job_uuid):
+    # Method to set failed job (due to timeout, etc) as pending,
+    # to avoid keeping it as enqueued.
+    def set_job_pending():
+        connection_info = _connection_info_for(db_name)
+        conn = psycopg2.connect(**connection_info)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        with closing(conn.cursor()) as cr:
+            cr.execute(
+                "UPDATE queue_job SET state=%s, "
+                "date_enqueued=NULL, date_started=NULL "
+                "WHERE uuid=%s and state=%s "
+                "RETURNING uuid",
+                (PENDING, job_uuid, ENQUEUED),
+            )
+            if cr.fetchone():
+                _logger.warning(
+                    "state of job %s was reset from %s to %s",
+                    job_uuid,
+                    ENQUEUED,
+                    PENDING,
+                )
+
     # TODO: better way to HTTP GET asynchronously (grequest, ...)?
     #       if this was python3 I would be doing this with
     #       asyncio, aiohttp and aiopg
@@ -217,9 +239,11 @@ def _async_http_get(scheme, host, port, user, password, db_name, job_uuid):
             # for codes between 500 and 600
             response.raise_for_status()
         except requests.Timeout:
+            set_job_pending()
             # A timeout is a normal behaviour, it shouldn't be logged as an exception
             pass
         except Exception:
+            set_job_pending()
             _logger.exception("exception in GET %s", url)
 
     thread = threading.Thread(target=urlopen)
