@@ -131,12 +131,12 @@ class QueueJob(models.Model):
     worker_pid = fields.Integer(readonly=True)
 
     def init(self):
-        self._cr.execute(
+        self.env.cr.execute(
             "SELECT indexname FROM pg_indexes WHERE indexname = %s ",
             ("queue_job_identity_key_state_partial_index",),
         )
-        if not self._cr.fetchone():
-            self._cr.execute(
+        if not self.env.cr.fetchone():
+            self.env.cr.execute(
                 "CREATE INDEX queue_job_identity_key_state_partial_index "
                 "ON queue_job (identity_key) WHERE state in ('pending', "
                 "'enqueued') AND identity_key IS NOT NULL;"
