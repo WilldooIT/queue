@@ -6,7 +6,7 @@ import random
 from datetime import datetime, timedelta
 
 from odoo import _, api, exceptions, fields, models
-from odoo.osv import expression
+from odoo.fields import Domain
 from odoo.tools import config, html_escape
 
 from odoo.addons.base_sparse_field.models.fields import Serialized
@@ -454,7 +454,7 @@ class QueueJob(models.Model):
             raise exceptions.ValidationError(
                 _("If both parameters are 0, ALL jobs will be requeued!")
             )
-        return expression.OR(domain)
+        return Domain.OR(domain)
 
     def _get_stuck_jobs_to_requeue(self, enqueued_delta, started_delta):
         job_model = self.env["queue.job"]
