@@ -6,10 +6,16 @@ import logging
 import traceback
 from io import StringIO
 
+import psycopg2
 from psycopg2 import OperationalError
 
 from odoo import api, models, tools
-from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
+#from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
+PG_CONCURRENCY_ERRORS_TO_RETRY = (
+    psycopg2.errorcodes.LOCK_NOT_AVAILABLE,
+    psycopg2.errorcodes.SERIALIZATION_FAILURE,
+    psycopg2.errorcodes.DEADLOCK_DETECTED
+)
 
 from odoo.addons.queue_job.controllers.main import PG_RETRY
 from odoo.addons.queue_job.exception import FailedJobError, RetryableJobError
