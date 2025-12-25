@@ -7,13 +7,19 @@ import random
 import time
 import traceback
 from io import StringIO
+import psycopg2
 
 from psycopg2 import OperationalError, errorcodes
 from werkzeug.exceptions import BadRequest, Forbidden
 
 from odoo import SUPERUSER_ID, _, api, http
 from odoo.modules.registry import Registry
-from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
+# from odoo.sql_db import PG_CONCURRENCY_ERRORS_TO_RETRY
+PG_CONCURRENCY_ERRORS_TO_RETRY = (
+    psycopg2.errorcodes.LOCK_NOT_AVAILABLE,
+    psycopg2.errorcodes.SERIALIZATION_FAILURE,
+    psycopg2.errorcodes.DEADLOCK_DETECTED
+)
 
 from ..delay import chain, group
 from ..exception import FailedJobError, RetryableJobError
