@@ -10,7 +10,7 @@ def post_load():
         "Apply Request._get_session_and_dbname monkey patch to capture db"
         " from request with multiple databases"
     )
-    _get_session_and_dbname_orig = http.Request._get_session_and_dbname
+    _get_session_and_dbname_orig = http.requestlib.Request._get_session_and_dbname
 
     def _get_session_and_dbname(self):
         session, dbname = _get_session_and_dbname_orig(self)
@@ -22,4 +22,4 @@ def post_load():
             dbname = self.httprequest.args["db"]
         return session, dbname
 
-    http.Request._get_session_and_dbname = _get_session_and_dbname
+    http.requestlib.Request._get_session_and_dbname = _get_session_and_dbname
