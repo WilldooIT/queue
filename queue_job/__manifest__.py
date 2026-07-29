@@ -11,7 +11,7 @@
     "external_dependencies": {"python": ["requests"]},
     "data": [
         "security/security.xml",
-        "security/ir.model.access.csv",
+        "security/ir.access.csv",
         "views/queue_job_views.xml",
         "views/queue_job_channel_views.xml",
         "views/queue_job_function_views.xml",

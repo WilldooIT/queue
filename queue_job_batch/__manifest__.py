@@ -18,7 +18,7 @@
         "data/queue_job_function_data.xml",
         # security
         "security/security.xml",
-        "security/ir.model.access.csv",
+        "security/ir.access.csv",
         # views
         "views/queue_job_views.xml",
         "views/queue_job_batch_views.xml",
