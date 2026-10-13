@@ -8,7 +8,6 @@ import time
 import traceback
 from contextlib import contextmanager
 from io import StringIO
-import psycopg2
 
 from psycopg2 import OperationalError, errorcodes
 from werkzeug.exceptions import BadRequest, Forbidden
@@ -161,16 +160,10 @@ class RunJobController(http.Controller):
                 job.store()
 
         try:
-            try:
-                cls._try_perform_job(env, job)
-            except OperationalError as err:
-                # Automatically retry the typical transaction serialization
-                # errors
-                if err.pgcode not in PG_CONCURRENCY_ERRORS_TO_RETRY:
-                    raise
-
-                _logger.debug("%s OperationalError, postponed", job)
-                raise RetryableJobError(err.pgerror, seconds=PG_RETRY) from err
+            # Job.perform() turns the retryable PostgreSQL concurrency errors
+            # into RetryableJobError itself, so that max_retries applies to
+            # them; there is nothing to convert here.
+            cls._try_perform_job(env, job)
 
         except RetryableJobError as err:
             # delay the job later, requeue
