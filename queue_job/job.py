@@ -12,6 +12,8 @@ from contextlib import contextmanager, nullcontext
 from datetime import datetime, timedelta
 from random import randint
 
+from psycopg2 import OperationalError, errorcodes
+
 import odoo
 from odoo.models import BaseModel
 
@@ -57,6 +59,13 @@ STATES = [
 
 DEFAULT_PRIORITY = 10  # used by the PriorityQueue to sort the jobs
 DEFAULT_MAX_RETRIES = 5
+PG_RETRY = 5  # seconds to wait before retrying a serialization failure
+# odoo.service.model stopped exporting these in 20.0
+PG_CONCURRENCY_ERRORS_TO_RETRY = (
+    errorcodes.LOCK_NOT_AVAILABLE,
+    errorcodes.SERIALIZATION_FAILURE,
+    errorcodes.DEADLOCK_DETECTED,
+)
 RETRY_INTERVAL = 10 * 60  # seconds
 
 _logger = logging.getLogger(__name__)
@@ -511,12 +520,22 @@ class Job:
         """
         self.retry += 1
         try:
-            if self.job_config.allow_commit:
-                env_context_manager = self.in_temporary_env()
-            else:
-                env_context_manager = nullcontext()
-            with env_context_manager:
-                self.result = self.func(*tuple(self.args), **self.kwargs)
+            try:
+                if self.job_config.allow_commit:
+                    env_context_manager = self.in_temporary_env()
+                else:
+                    env_context_manager = nullcontext()
+                with env_context_manager:
+                    self.result = self.func(*tuple(self.args), **self.kwargs)
+            except OperationalError as err:
+                # The typical transaction serialization errors are retryable,
+                # and converting them here rather than in the runners is what
+                # subjects them to max_retries below: a job raising them from
+                # outside perform() is postponed without ever consulting the
+                # limit, so it retries for ever.
+                if err.pgcode not in PG_CONCURRENCY_ERRORS_TO_RETRY:
+                    raise
+                raise RetryableJobError(err.pgerror, seconds=PG_RETRY) from err
         except RetryableJobError as err:
             if err.ignore_retry:
                 self.retry -= 1
