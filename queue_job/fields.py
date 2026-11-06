@@ -72,6 +72,14 @@ class JobSerialized(fields.Json):
             value = json.dumps(value, cls=JobEncoder)
         return json.loads(value, cls=JobDecoder, env=record.env)
 
+    def convert_to_write(self, value, record):
+        # Odoo's Json field stops at the cache format, which for this field is
+        # the json text rather than the recordset a caller assigns. Finish the
+        # round trip so the value stays in the field's own write format, as
+        # Field.convert_to_write did before 20.0.
+        cache_value = self.convert_to_cache(value, record, validate=False)
+        return self.convert_to_record(cache_value, record)
+
     def convert_to_export(self, value, record):
         if not value:
             return ""
