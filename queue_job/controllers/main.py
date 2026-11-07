@@ -211,7 +211,7 @@ class RunJobController(http.Controller):
         type="http",
         auth="none",
         save_session=False,
-        readonly=False,
+        replica=False,
     )
     def runjob(self, job_uuid, **kw):
         http.request.update_env(user=SUPERUSER_ID)
